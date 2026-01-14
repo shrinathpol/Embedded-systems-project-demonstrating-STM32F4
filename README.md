@@ -463,6 +463,6 @@ MIT License - Free for commercial and personal use
 
 ---
 
-**Author:** Manjunath Shrinath  
+**Author:** Shrinathpol 
 **Updated:** January 15, 2026  
 **Status:** Active Development ✓
