@@ -180,13 +180,13 @@ ADC: 1024 | Volts: 0.826 V
        ▼
 ┌──────────────────────┐
 │  ADC Conversion      │  ← 12-bit conversion
-│  PA0 → 0-4095       │
+│  PA0 → 0-4095        │
 └──────┬───────────────┘
        │
        ▼
 ┌──────────────────────────┐
 │  DMA2 Stream 0           │  ← Zero-CPU transfer
-│  ADC→DR → RAM           │
+│  ADC→DR → RAM            │
 └──────┬───────────────────┘
        │ Transfer Complete
        ▼
