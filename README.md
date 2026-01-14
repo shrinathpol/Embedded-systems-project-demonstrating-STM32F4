@@ -210,12 +210,6 @@ Sample Period      = 10 ms
 - 3.3V input source for analog testing
 - USB power supply or external power
 
-## References
-
-- [STM32F4 Reference Manual](https://www.st.com/resource/en/reference_manual/dm00031020-stm32f405-415-stm32f407-417-stm32f427-437-and-stm32f429-439-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
-- [BlackPill Documentation](https://github.com/WeActStudio/BluePill)
-- [PlatformIO Documentation](https://docs.platformio.org/)
-
 ## Code Explanation
 
 ### Global Variables
@@ -330,3 +324,4 @@ Timer (100 Hz) → ADC Trigger → ADC Conversion → DMA Transfer → Interrupt
 - [STM32F4 Reference Manual](https://www.st.com/resource/en/reference_manual/dm00031020-stm32f405-415-stm32f407-417-stm32f427-437-and-stm32f429-439-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
 - [BlackPill Documentation](https://github.com/WeActStudio/BluePill)
 - [PlatformIO Documentation](https://docs.platformio.org/)
+## References
