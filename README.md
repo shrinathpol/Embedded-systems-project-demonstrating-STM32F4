@@ -106,15 +106,6 @@ pio run -e blackpill_f411ce --target upload
 pio device monitor --speed 115200
 ```
 
-### Expected Output
-```
-ADC:    0 | Volts: 0.000 V
-ADC:  205 | Volts: 0.165 V
-ADC:  410 | Volts: 0.330 V
-ADC:  615 | Volts: 0.496 V
-ADC:  820 | Volts: 0.661 V
-ADC: 1024 | Volts: 0.826 V
-```
 
 ## 🔄 Data Pipeline
 
@@ -318,6 +309,16 @@ Timer (100 Hz) → ADC Trigger → ADC Conversion → DMA Transfer → Interrupt
 - Bit 8: PSIZE (Peripheral size = 16-bit)
 - Bit 11: CIRC (Circular mode)
 - Bit 13: MSIZE (Memory size = 16-bit)
+
+  ### Expected Output
+```
+ADC:    0 | Volts: 0.000 V
+ADC:  205 | Volts: 0.165 V
+ADC:  410 | Volts: 0.330 V
+ADC:  615 | Volts: 0.496 V
+ADC:  820 | Volts: 0.661 V
+ADC: 1024 | Volts: 0.826 V
+```
 
 ## References
 - [STM32F4 Reference Manual](https://www.st.com/resource/en/reference_manual/dm00031020-stm32f405-415-stm32f407-417-stm32f427-437-and-stm32f429-439-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
