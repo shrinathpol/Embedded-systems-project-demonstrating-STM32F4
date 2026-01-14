@@ -12,6 +12,7 @@
 This project implements a **complete data acquisition system** featuring:
 
 - **Hardware-triggered ADC sampling** at 100 Hz with timer control
+- **Multi-channel ADC support** for simultaneous data acquisition
 - **DMA-based data transfer** for CPU-efficient operation
 - **Professional modular architecture** with clear separation of concerns
 - **Real-time UART communication** for live data monitoring
@@ -34,7 +35,8 @@ This project implements a **complete data acquisition system** featuring:
 ┌─────────────────────────────────────────┐
 │         STM32F411CE (BlackPill)         │
 ├─────────────────────────────────────────┤
-│ PA0   → Analog Input (ADC Channel 0)    │ ← Sensor/Potentiometer
+│ PA0   → Analog Input (ADC Channel 0)    │ ← Sensor/Potentiometer 1
+│ PA1   → Analog Input (ADC Channel 1)    │ ← Sensor/Potentiometer 2
 │ PA9   → UART TX (Serial Output)         │ ← USB-TTL Converter
 │ PC13  → LED Output (Status Indicator)   │ ← Visual Feedback
 └─────────────────────────────────────────┘
@@ -58,6 +60,7 @@ Timers      : Multiple 32-bit & 16-bit timers
 | Feature | Description | Benefit |
 |---------|-------------|---------|
 | **Timer-Triggered Sampling** | TIM2 @ 100 Hz | Precise, consistent timing |
+| **Multi-channel ADC** | 2 channels (PA0, PA1) | Simultaneous data capture |
 | **DMA Transfer** | Zero CPU overhead | Efficient data movement |
 | **12-bit ADC** | 0-4095 resolution | Good precision |
 | **Integer Math** | No floating-point | Faster, smaller code |
@@ -65,7 +68,6 @@ Timers      : Multiple 32-bit & 16-bit timers
 | **Interrupt Driven** | Hardware callbacks | Low latency |
 
 ### Advanced Capabilities (Phase 2+)
-- 🔄 Multi-channel ADC support
 - 💾 Data logging to flash memory
 - ⚙️ ADC calibration routines
 - 📊 Min/Max/Average statistics
@@ -157,12 +159,11 @@ pio device monitor --speed 115200
 
 ### Expected Output
 ```
-ADC:    0 | Volts: 0.000 V
-ADC:  205 | Volts: 0.165 V
-ADC:  410 | Volts: 0.330 V
-ADC:  615 | Volts: 0.496 V
-ADC:  820 | Volts: 0.661 V
-ADC: 1024 | Volts: 0.826 V
+ADC1:    0 | V1: 0.000 V | ADC2:  205 | V2: 0.165 V
+ADC1:  205 | V1: 0.165 V | ADC2:  410 | V2: 0.330 V
+ADC1:  410 | V1: 0.330 V | ADC2:  615 | V2: 0.496 V
+ADC1:  615 | V1: 0.496 V | ADC2:  820 | V2: 0.661 V
+ADC1:  820 | V1: 0.661 V | ADC2: 1024 | V2: 0.826 V
 ```
 
 ## 🔄 Data Pipeline
@@ -179,13 +180,13 @@ ADC: 1024 | Volts: 0.826 V
        │
        ▼
 ┌──────────────────────┐
-│  ADC Conversion      │  ← 12-bit conversion
-│  PA0 → 0-4095        │
+│  ADC Conversion      │  ← 12-bit scan mode
+│  PA0, PA1 → 0-4095   │
 └──────┬───────────────┘
        │
        ▼
 ┌──────────────────────────┐
-│  DMA2 Stream 0           │  ← Zero-CPU transfer
+│  DMA2 Stream 0           │  ← Zero-CPU transfer (2 values)
 │  ADC→DR → RAM            │
 └──────┬───────────────────┘
        │ Transfer Complete
@@ -197,14 +198,14 @@ ADC: 1024 | Volts: 0.826 V
        │
        ▼
 ┌──────────────────────────┐
-│  Data Processing         │  ← Convert to voltage
+│  Data Processing         │  ← Convert to voltage (2 channels)
 │  Format & Transmit       │
 └──────┬───────────────────┘
        │
        ▼
 ┌──────────────────────────┐
 │  UART Output             │  ← Real-time monitor
-│  "ADC: xxxx | Volts: x.x"│
+│ "ADC1: x|V1: x|ADC2: x|V2: x"│
 └──────────────────────────┘
 ```
 
@@ -269,7 +270,7 @@ Sample Period      = 10 ms
 
 ### Global Variables
 ```c
-volatile uint16_t adc_raw_value = 0;           // Stores ADC conversion result
+volatile uint16_t adc_raw_values[2] = {0};   // Stores ADC conversion results
 volatile uint8_t dma_transfer_complete = 0;    // Flag set by DMA interrupt
 ```
 - Marked `volatile` to prevent compiler optimization, as they're modified by hardware interrupts
@@ -285,6 +286,7 @@ volatile uint8_t dma_transfer_complete = 0;    // Flag set by DMA interrupt
 #### `GPIO_Init()`
 - Enables GPIO port clocks for Port A and C
 - PA0: Configured as analog input (MODER = 11) for ADC channel 0
+- PA1: Configured as analog input (MODER = 11) for ADC channel 1
 - PA9: Configured as alternate function (MODER = 10) with AF7 for USART1 TX
 - PC13: Configured as output (MODER = 01) for LED control
 
@@ -299,16 +301,19 @@ volatile uint8_t dma_transfer_complete = 0;    // Flag set by DMA interrupt
 - EXTEN = 01: Rising edge trigger detection
 - EXTSEL = 0110: Selects TIM2 TRGO as trigger source
 - DMA and DDS enabled for continuous conversions
-- Single channel (PA0) in conversion sequence
+- **Scan mode enabled** (`SCAN = 1`)
+- **Number of conversions** set to 2
+- **Conversion sequence**: Channel 0 (PA0) then Channel 1 (PA1)
 
 #### `DMA_Init()`
 - Enables DMA2 clock (ADC1 connects to DMA2 Stream 0)
 - Configured for:
   - 16-bit peripheral and memory sizes
   - Circular mode (auto-repeats after transfer)
-  - No memory increment (overwrites same variable)
+  - **Memory increment enabled** (`MINC = 1`)
+  - **Number of data to transfer** set to 2
   - Transfer complete interrupt enabled
-- Transfers ADC data register → `adc_raw_value` variable
+- Transfers ADC data register → `adc_raw_values` array
 - Generates interrupt on completion
 
 #### `UART1_Init()`
@@ -330,28 +335,37 @@ volatile uint8_t dma_transfer_complete = 0;    // Flag set by DMA interrupt
 
 ```c
 if (dma_transfer_complete) {
-    dma_transfer_complete = 0;                           // Clear flag
-    uint32_t voltage_mv = (adc_raw_value * 3300) / 4095; // Convert to mV
-    uint32_t val_whole = voltage_mv / 1000;             // Whole volts
-    uint32_t val_dec = voltage_mv % 1000;               // Decimal portion
-    
-    sprintf(msg_buffer, "ADC: %4d | Volts: %lu.%03lu V\r\n", ...);
+    dma_transfer_complete = 0;
+
+    uint32_t voltage_mv_ch1 = (adc_raw_values[0] * 3300) / 4095;
+    uint32_t val_whole_ch1 = voltage_mv_ch1 / 1000;
+    uint32_t val_dec_ch1 = voltage_mv_ch1 % 1000;
+
+    uint32_t voltage_mv_ch2 = (adc_raw_values[1] * 3300) / 4095;
+    uint32_t val_whole_ch2 = voltage_mv_ch2 / 1000;
+    uint32_t val_dec_ch2 = voltage_mv_ch2 % 1000;
+
+    sprintf(msg_buffer, 
+            "ADC1: %4d | V1: %lu.%03lu V | ADC2: %4d | V2: %lu.%03lu V\r\n", 
+            adc_raw_values[0], val_whole_ch1, val_dec_ch1,
+            adc_raw_values[1], val_whole_ch2, val_dec_ch2);
+
     UART1_SendString(msg_buffer);
-    GPIOC->ODR ^= (1 << 13);                            // Toggle LED
+    GPIOC->ODR ^= (1 << 13);
 }
 ```
 
 ### Data Flow
 ```
-Timer (100 Hz) → ADC Trigger → ADC Conversion → DMA Transfer → Interrupt
-                                                      ↓
-                                                 Set Flag
-                                                      ↓
-                                              Main Loop Detects
-                                                      ↓
-                                         Convert & Transmit via UART
-                                                      ↓
-                                                 Toggle LED
+Timer (100 Hz) → ADC Trigger → ADC Scan Conversion (2 channels) → DMA Transfer (2 values) → Interrupt
+                                                                            ↓
+                                                                       Set Flag
+                                                                            ↓
+                                                                    Main Loop Detects
+                                                                            ↓
+                                                       Convert & Transmit both channels via UART
+                                                                            ↓
+                                                                       Toggle LED
 ```
 
 ### Register Bit Definitions
