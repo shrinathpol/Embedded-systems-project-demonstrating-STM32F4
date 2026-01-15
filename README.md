@@ -27,7 +27,7 @@ A professional-grade embedded systems project implementing a complete real-time 
 ```
 Hardware Trigger Chain:
      ┌─────────────────┐
-     │  Timer (TIM2)   │ ← Oscillates at       100 Hz
+     │  Timer (TIM2)   │ ← Oscillates at 100 Hz
      │  @ 10 kHz ÷ 100 │
      └───────┬─────────┘
              │ TRGO Output Event
