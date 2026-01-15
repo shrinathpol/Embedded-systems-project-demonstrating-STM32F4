@@ -27,35 +27,35 @@ A professional-grade embedded systems project implementing a complete real-time 
 ```
 Hardware Trigger Chain:
      ┌─────────────────┐
-     │  Timer (TIM2)   │ ← Oscillates at 100 Hz
-     │  @ 10 kHz ÷ 100 │
+     │  Timer (TIM2)      │ ← Oscillates at       100 Hz
+     │  @ 10 kHz ÷ 100    │
      └───────┬─────────┘
              │ TRGO Output Event
              ▼
     ┌─────────────────────┐
-    │  ADC1 Conversion    │ ← Triggered on rising edge
-    │  Channel 0 (PA0)    │
-    │  12-bit Resolution  │
+    │  ADC1 Conversion        │ ← Triggered on rising edge
+    │  Channel 0 (PA0)        │
+    │  12-bit Resolution      │
     └────────┬────────────┘
              │ Conversion Complete
              ▼
     ┌─────────────────────┐
-    │  DMA2 Stream 0      │ ← Automatic data transfer
-    │  ADC→DR to Memory   │ ← Zero CPU involvement
-    │  Circular Mode      │
+    │  DMA2 Stream 0          │ ← Automatic data transfer
+    │  ADC→DR to Memory      │ ← Zero CPU involvement
+    │  Circular Mode          │
     └────────┬────────────┘
              │ Transfer Complete
              ▼
     ┌─────────────────────┐
-    │  DMA Interrupt      │ ← Signals main loop
-    │  ISR Handler        │ ← Clears flags
+    │  DMA Interrupt          │ ← Signals main loop
+    │  ISR Handler            │ ← Clears flags
     └────────┬────────────┘
              │
              ▼
     ┌─────────────────────┐
-    │  Main Loop          │
-    │  Process & Display  │ ← Convert voltage
-    │  Send via UART      │ ← 115200 baud
+    │  Main Loop              │
+    │  Process & Display      │ ← Convert voltage
+    │  Send via UART          │ ← 115200 baud
     └─────────────────────┘
 ```
 
