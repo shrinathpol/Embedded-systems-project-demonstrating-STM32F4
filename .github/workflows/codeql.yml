@@ -11,7 +11,6 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    # STM32 compilation is faster on Ubuntu
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     
     permissions:
@@ -25,19 +24,25 @@ jobs:
       matrix:
         include:
         - language: c-cpp
-          # CHANGED: Switched from 'autobuild' to 'manual'
           build-mode: manual
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # NEW STEP: Install the toolchain required for STM32
-    - name: Install ARM GCC Toolchain and Make
+    # STEP 1: Set up Python (Required for PlatformIO)
+    - name: Set up Python
+      if: matrix.build-mode == 'manual'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    # STEP 2: Install PlatformIO Core
+    - name: Install PlatformIO
       if: matrix.build-mode == 'manual'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi make
+        python -m pip install --upgrade pip
+        pip install -U platformio
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -45,14 +50,13 @@ jobs:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
 
-    # MODIFIED STEP: Replaced the error message with actual build commands
-    - name: Build Project
+    # STEP 3: Build using PlatformIO
+    # CodeQL will "listen" to the compiler calls made by pio run
+    - name: Build PlatformIO Project
       if: matrix.build-mode == 'manual'
-      shell: bash
       run: |
-        # This assumes your Makefile is in the root of the repo.
-        # If it is in a subfolder (e.g., 'Debug'), use: cd Debug && make all
-        make all
+        # PlatformIO will automatically download the STM32 toolchains here
+        pio run
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
