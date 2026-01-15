@@ -105,7 +105,7 @@ GND     Ground          Signal Reference     Common Ground
 ```
 Microcontroller: STM32F411CEU6 (ARM Cortex-M4)
 ────────────────────────────────────────────
-Flash Memory:     512 KB
+Flash Memory:    512 KB
 SRAM:            128 KB
 Clock Frequency: 16 MHz (internal HSI oscillator)
 ADC Channels:    16 analog inputs (single ADC)
